@@ -1,5 +1,6 @@
 services:
 
+  # Your data warehouse — where the Netflix data will live
   postgres:
     image: postgres:16
     container_name: netflix_postgres
@@ -12,14 +13,16 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  # Airflow — runs everything (webserver + scheduler) in one process
   airflow:
-    build: .
+    image: apache/airflow:2.9.3
     container_name: netflix_airflow
     depends_on:
       - postgres
     environment:
       AIRFLOW__CORE__EXECUTOR: SequentialExecutor
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      _PIP_ADDITIONAL_REQUIREMENTS: 'pandas psycopg2-binary'
     ports:
       - "8080:8080"
     volumes:
