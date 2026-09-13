@@ -1,7 +1,7 @@
 import pandas as pd
 from datetime import datetime 
 
-from airflow import dag
+from airflow import DAG
 #Defines a task that runs Python
 from airflow.operators.python import PythonOperator 
 #Defines a task that runs SQL directly
@@ -11,7 +11,7 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 def load_raw_data():
 
-    csv_path = "D:\study\Data_Engineering\netflix-data-warehouse\dags\netflix_dataset.csv"
+    csv_path = "/opt/airflow/dags/netflix_dataset.csv"
 
     df = pd.read_csv(csv_path)
 
@@ -32,7 +32,8 @@ with DAG(
 ) as dag:
 
     load_raw = PythonOperator(
-        task_id = "load_raw_data"
+        task_id = "load_raw_data",
+        python_callable = load_raw_data
     )
 
     transform = PostgresOperator(
@@ -42,7 +43,7 @@ with DAG(
             DROP TABLE IF EXISTS netflix_data_clean;
 
             create table netflix_data_clean(
-                show_id integer primary key, 
+                show_id text primary key, 
                 type varchar(50), 
                 title text, 
                 director varchar(100), 
@@ -54,6 +55,22 @@ with DAG(
                 duration text, 
                 listed_in text, 
                 description text
-            )
+            );
+
+            insert into netflix_data_clean (show_id, type, title, director, "cast", country, date_added, release_year, rating, duration, listed_in, description)
+            select
+                show_id,
+                type,
+                title,
+                director,
+                "cast",
+                country,
+                date_added::date,
+                release_year::integer,
+                rating,
+                duration,
+                listed_in,
+                description
+            from netflix_data_raw;
         """
     )
